@@ -137,7 +137,7 @@ export default function Reports() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between border-b border-border pb-4">
         <h1 className="text-2xl font-bold tracking-tight">Riportok</h1>
         <Select value={year} onValueChange={setYear}>
           <SelectTrigger className="w-28 rounded-lg"><SelectValue /></SelectTrigger>

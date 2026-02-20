@@ -66,7 +66,7 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <h1 className="text-2xl font-semibold tracking-tight">Beállítások</h1>
+      <h1 className="text-2xl font-semibold tracking-tight border-b border-border pb-4">Beállítások</h1>
 
       <Card className="rounded-xl shadow-card">
         <CardHeader className="pb-3">
