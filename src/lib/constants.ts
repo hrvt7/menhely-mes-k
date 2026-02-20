@@ -25,6 +25,43 @@ export const SIZE_CONFIG = {
   xlarge: { label: "Extra nagy" },
 } as const;
 
+export const INTAKE_METHOD_CONFIG = {
+  street: { label: "Utcáról" },
+  authority: { label: "Hatóságtól" },
+  owner: { label: "Gazdától" },
+  shelter: { label: "Másik menhelytől" },
+  other: { label: "Egyéb" },
+} as const;
+
+export const CHIP_STATUS_CONFIG = {
+  registered: { label: "Regisztrált", colorClass: "bg-green-100 text-green-700" },
+  not_registered: { label: "Nem regisztrált", colorClass: "bg-red-100 text-red-700" },
+  unknown: { label: "Ismeretlen", colorClass: "bg-gray-100 text-gray-600" },
+} as const;
+
+export const HEALTH_CATEGORY_CONFIG = {
+  general: { label: "Általános", colorClass: "border-l-gray-400", bgClass: "bg-gray-100 text-gray-700" },
+  treatment: { label: "Kezelés", colorClass: "border-l-blue-500", bgClass: "bg-blue-100 text-blue-700" },
+  surgery: { label: "Műtét", colorClass: "border-l-purple-500", bgClass: "bg-purple-100 text-purple-700" },
+  parasite: { label: "Parazitairtás", colorClass: "border-l-amber-500", bgClass: "bg-amber-100 text-amber-700" },
+  dental: { label: "Fogászat", colorClass: "border-l-teal-500", bgClass: "bg-teal-100 text-teal-700" },
+  injury: { label: "Sérülés", colorClass: "border-l-red-500", bgClass: "bg-red-100 text-red-700" },
+  other: { label: "Egyéb", colorClass: "border-l-gray-400", bgClass: "bg-gray-100 text-gray-700" },
+} as const;
+
+export const DOCUMENT_TYPE_CONFIG = {
+  intake_form: { label: "Befogadási lap", icon: "📋" },
+  medical: { label: "Orvosi dokumentum", icon: "🩺" },
+  xray: { label: "Röntgen", icon: "🔬" },
+  adoption_contract: { label: "Örökbefogadási szerződés", icon: "📄" },
+  other: { label: "Egyéb", icon: "📎" },
+} as const;
+
+export type IntakeMethod = keyof typeof INTAKE_METHOD_CONFIG;
+export type ChipStatus = keyof typeof CHIP_STATUS_CONFIG;
+export type HealthCategory = keyof typeof HEALTH_CATEGORY_CONFIG;
+export type DocumentType = keyof typeof DOCUMENT_TYPE_CONFIG;
+
 export type AnimalStatus = keyof typeof STATUS_CONFIG;
 export type Species = keyof typeof SPECIES_CONFIG;
 export type Sex = keyof typeof SEX_CONFIG;

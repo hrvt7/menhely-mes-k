@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SPECIES_CONFIG, formatAge } from "@/lib/constants";
-import { PawPrint, CheckCircle2, Clock, Home } from "lucide-react";
+import { PawPrint, CheckCircle2, Clock, Home, AlertTriangle } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Animal = Tables<"animals">;
@@ -22,6 +22,7 @@ export default function Dashboard() {
   const { shelterId } = useAuth();
   const [animals, setAnimals] = useState<Animal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [overdueCount, setOverdueCount] = useState(0);
 
   useEffect(() => {
     if (!shelterId) return;
@@ -33,6 +34,18 @@ export default function Dashboard() {
       .then(({ data }) => {
         setAnimals(data ?? []);
         setLoading(false);
+      });
+    // Overdue vaccines query
+    const today = new Date().toISOString().slice(0, 10);
+    supabase
+      .from("animal_vaccinations")
+      .select("animal_id, animals!inner(status)")
+      .eq("shelter_id", shelterId)
+      .lt("next_due_date", today)
+      .in("animals.status", ["available", "reserved"])
+      .then(({ data }) => {
+        const uniqueAnimals = new Set((data ?? []).map((d: any) => d.animal_id));
+        setOverdueCount(uniqueAnimals.size);
       });
   }, [shelterId]);
 
@@ -92,6 +105,18 @@ export default function Dashboard() {
               <span className="text-xl">📘</span>
               <span className="text-sm font-medium text-secondary-foreground">{readyToPost} állat kész a posztolásra</span>
               <span className="ml-auto text-sm text-primary font-medium">Megtekintés →</span>
+            </CardContent>
+          </Card>
+        </Link>
+      )}
+
+      {overdueCount > 0 && (
+        <Link to="/animals?filter=overdue_vaccine" className="block">
+          <Card className="rounded-xl border-amber-300 bg-amber-50 shadow-card hover:shadow-card-hover transition-all">
+            <CardContent className="p-4 flex items-center gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-600" />
+              <span className="text-sm font-medium text-amber-800">⚠️ {overdueCount} állatnál lejárt oltás — Ellenőrizd az oltási naplót</span>
+              <span className="ml-auto text-sm text-amber-700 font-medium">Megtekintés →</span>
             </CardContent>
           </Card>
         </Link>

@@ -12,8 +12,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, PawPrint } from "lucide-react";
+import { Plus, PawPrint, AlertTriangle } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Animal = Tables<"animals">;
@@ -26,9 +27,11 @@ export default function Animals() {
   const [animals, setAnimals] = useState<Animal[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>(searchParams.get("filter") === "ready" ? "available" : "all");
+  const filterParam = searchParams.get("filter");
+  const [statusFilter, setStatusFilter] = useState<string>(filterParam === "ready" ? "available" : "all");
   const [speciesFilter, setSpeciesFilter] = useState<string>("all");
   const [modalOpen, setModalOpen] = useState(false);
+  const [overdueAnimalIds, setOverdueAnimalIds] = useState<Set<string>>(new Set());
 
   const [form, setForm] = useState({ name: "", species: "dog", sex: "unknown", size: "medium", age_years: "", chip_id: "", breed_hint: "", notes: "" });
   const [submitting, setSubmitting] = useState(false);
@@ -46,7 +49,22 @@ export default function Animals() {
 
   useEffect(() => { fetchAnimals(); }, [shelterId]);
 
+  // Fetch overdue vaccine animal IDs
+  useEffect(() => {
+    if (!shelterId) return;
+    const today = new Date().toISOString().slice(0, 10);
+    supabase
+      .from("animal_vaccinations")
+      .select("animal_id")
+      .eq("shelter_id", shelterId)
+      .lt("next_due_date", today)
+      .then(({ data }) => {
+        setOverdueAnimalIds(new Set((data ?? []).map(d => d.animal_id)));
+      });
+  }, [shelterId]);
+
   const filtered = animals.filter(a => {
+    if (filterParam === "overdue_vaccine" && !overdueAnimalIds.has(a.id)) return false;
     if (statusFilter !== "all" && a.status !== statusFilter) return false;
     if (speciesFilter !== "all" && a.species !== speciesFilter) return false;
     if (search) {
@@ -169,7 +187,19 @@ export default function Animals() {
                         <div className="flex items-center gap-3">
                           <span className="text-lg">{sp.emoji}</span>
                           <div>
-                            <p className="font-medium">{a.name}</p>
+                            <div className="flex items-center gap-1.5">
+                              <p className="font-medium">{a.name}</p>
+                              {overdueAnimalIds.has(a.id) && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+                                    </TooltipTrigger>
+                                    <TooltipContent><p>Lejárt oltás</p></TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+                            </div>
                             {a.chip_id && <p className="text-xs text-muted-foreground">{a.chip_id}</p>}
                           </div>
                         </div>
