@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import Animals from "./pages/Animals";
 import AnimalProfile from "./pages/AnimalProfile";
 import Import from "./pages/Import";
+import Reports from "./pages/Reports";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 
@@ -32,6 +33,7 @@ const App = () => (
               <Route path="/animals" element={<Animals />} />
               <Route path="/animals/:id" element={<AnimalProfile />} />
               <Route path="/import" element={<Import />} />
+              <Route path="/reports" element={<Reports />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -11,8 +11,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, ChevronRight } from "lucide-react";
+import { Plus, PawPrint } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Animal = Tables<"animals">;
@@ -20,6 +21,7 @@ type Animal = Tables<"animals">;
 export default function Animals() {
   const { shelterId } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [animals, setAnimals] = useState<Animal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,7 +30,6 @@ export default function Animals() {
   const [speciesFilter, setSpeciesFilter] = useState<string>("all");
   const [modalOpen, setModalOpen] = useState(false);
 
-  // New animal form
   const [form, setForm] = useState({ name: "", species: "dog", sex: "unknown", size: "medium", age_years: "", chip_id: "", breed_hint: "", notes: "" });
   const [submitting, setSubmitting] = useState(false);
 
@@ -81,31 +82,46 @@ export default function Animals() {
     setSubmitting(false);
   };
 
-  if (loading) return <div className="flex items-center justify-center py-12"><div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" /></div>;
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-10 w-28" />
+        </div>
+        <div className="flex gap-3"><Skeleton className="h-10 w-64" /><Skeleton className="h-10 w-40" /><Skeleton className="h-10 w-36" /></div>
+        <Card className="rounded-xl shadow-card overflow-hidden">
+          <div className="p-0">
+            {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-14 mx-5 my-2 rounded-lg" />)}
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Állatok</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Állatok</h1>
           <p className="text-sm text-muted-foreground">{animals.length} állat</p>
         </div>
-        <Button onClick={() => setModalOpen(true)} className="gap-2"><Plus className="h-4 w-4" /> Új állat</Button>
+        <Button onClick={() => setModalOpen(true)} className="gap-2 rounded-lg"><Plus className="h-4 w-4" /> Új állat</Button>
       </div>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
-        <Input placeholder="Keresés név, chip, fajta..." value={search} onChange={e => setSearch(e.target.value)} className="max-w-xs" />
+        <Input placeholder="Keresés név, chip, fajta..." value={search} onChange={e => setSearch(e.target.value)} className="max-w-xs rounded-lg" />
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-40 rounded-lg"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Minden státusz</SelectItem>
-            {Object.entries(STATUS_CONFIG).map(([k, v]) => <SelectItem key={k} value={k}>{v.emoji} {v.label}</SelectItem>)}
+            {Object.entries(STATUS_CONFIG).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={speciesFilter} onValueChange={setSpeciesFilter}>
-          <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-36 rounded-lg"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Minden faj</SelectItem>
             {Object.entries(SPECIES_CONFIG).map(([k, v]) => <SelectItem key={k} value={k}>{v.emoji} {v.label}</SelectItem>)}
@@ -115,27 +131,26 @@ export default function Animals() {
 
       {/* Table */}
       {filtered.length === 0 ? (
-        <Card>
+        <Card className="rounded-xl shadow-card">
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <span className="text-4xl mb-3">🐾</span>
+            <PawPrint className="h-12 w-12 text-muted-foreground/30 mb-3" />
             <p className="text-muted-foreground mb-3">Nincs találat</p>
             {animals.length === 0 && (
-              <Link to="/import"><Button variant="outline">Import indítása</Button></Link>
+              <Link to="/import"><Button variant="outline" className="rounded-lg">Import indítása</Button></Link>
             )}
           </CardContent>
         </Card>
       ) : (
-        <Card className="overflow-hidden">
+        <Card className="rounded-xl shadow-card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border bg-accent/30">
-                  <th className="px-5 py-3 text-left font-medium text-muted-foreground">Állat</th>
-                  <th className="px-3 py-3 text-left font-medium text-muted-foreground">Faj / Kor</th>
-                  <th className="px-3 py-3 text-left font-medium text-muted-foreground">Státusz</th>
-                  <th className="px-3 py-3 text-left font-medium text-muted-foreground">Facebook</th>
-                  <th className="px-3 py-3 text-left font-medium text-muted-foreground">AI szöveg</th>
-                  <th className="px-3 py-3"></th>
+                <tr className="border-b border-border bg-accent/50 sticky top-0 z-10">
+                  <th className="px-5 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">Állat</th>
+                  <th className="px-3 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">Faj / Kor</th>
+                  <th className="px-3 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">Státusz</th>
+                  <th className="px-3 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">Facebook</th>
+                  <th className="px-3 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">AI szöveg</th>
                 </tr>
               </thead>
               <tbody>
@@ -145,7 +160,11 @@ export default function Animals() {
                   const fbReady = !!a.ai_text_short && !a.fb_post_id;
                   const hasAi = !!a.ai_text_short;
                   return (
-                    <tr key={a.id} className="border-b border-border last:border-0 hover:bg-accent/30 transition-colors">
+                    <tr
+                      key={a.id}
+                      onClick={() => navigate(`/animals/${a.id}`)}
+                      className="border-b border-border last:border-0 hover:bg-accent/50 transition-colors cursor-pointer"
+                    >
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-3">
                           <span className="text-lg">{sp.emoji}</span>
@@ -166,11 +185,6 @@ export default function Animals() {
                         {hasAi ? <span className="text-primary text-xs font-medium">✓ Kész</span>
                           : <span className="text-muted-foreground text-xs">— Hiányzik</span>}
                       </td>
-                      <td className="px-3 py-3">
-                        <Link to={`/animals/${a.id}`} className="text-primary hover:underline text-xs flex items-center gap-1">
-                          Megnyitás <ChevronRight className="h-3 w-3" />
-                        </Link>
-                      </td>
                     </tr>
                   );
                 })}
@@ -185,17 +199,17 @@ export default function Animals() {
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle>Új állat hozzáadása</DialogTitle></DialogHeader>
           <form onSubmit={handleCreate} className="space-y-4">
-            <div className="space-y-2"><Label>Név *</Label><Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required /></div>
+            <div className="space-y-2"><Label>Név *</Label><Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required className="rounded-lg" /></div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2"><Label>Faj</Label>
                 <Select value={form.species} onValueChange={v => setForm({ ...form, species: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="rounded-lg"><SelectValue /></SelectTrigger>
                   <SelectContent>{Object.entries(SPECIES_CONFIG).map(([k, v]) => <SelectItem key={k} value={k}>{v.emoji} {v.label}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div className="space-y-2"><Label>Nem</Label>
                 <Select value={form.sex} onValueChange={v => setForm({ ...form, sex: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="rounded-lg"><SelectValue /></SelectTrigger>
                   <SelectContent><SelectItem value="male">Kan</SelectItem><SelectItem value="female">Szuka</SelectItem><SelectItem value="unknown">Ismeretlen</SelectItem></SelectContent>
                 </Select>
               </div>
@@ -203,18 +217,18 @@ export default function Animals() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2"><Label>Méret</Label>
                 <Select value={form.size} onValueChange={v => setForm({ ...form, size: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="rounded-lg"><SelectValue /></SelectTrigger>
                   <SelectContent><SelectItem value="small">Kicsi</SelectItem><SelectItem value="medium">Közepes</SelectItem><SelectItem value="large">Nagy</SelectItem><SelectItem value="xlarge">Extra nagy</SelectItem></SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2"><Label>Kor (év)</Label><Input type="number" value={form.age_years} onChange={e => setForm({ ...form, age_years: e.target.value })} placeholder="2" /></div>
+              <div className="space-y-2"><Label>Kor (év)</Label><Input type="number" value={form.age_years} onChange={e => setForm({ ...form, age_years: e.target.value })} placeholder="2" className="rounded-lg" /></div>
             </div>
-            <div className="space-y-2"><Label>Chip szám</Label><Input value={form.chip_id} onChange={e => setForm({ ...form, chip_id: e.target.value })} placeholder="348..." /></div>
-            <div className="space-y-2"><Label>Fajta tipp</Label><Input value={form.breed_hint} onChange={e => setForm({ ...form, breed_hint: e.target.value })} placeholder="labrador jellegű" /></div>
-            <div className="space-y-2"><Label>Megjegyzések</Label><Textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={3} /></div>
+            <div className="space-y-2"><Label>Chip szám</Label><Input value={form.chip_id} onChange={e => setForm({ ...form, chip_id: e.target.value })} placeholder="348..." className="rounded-lg" /></div>
+            <div className="space-y-2"><Label>Fajta tipp</Label><Input value={form.breed_hint} onChange={e => setForm({ ...form, breed_hint: e.target.value })} placeholder="labrador jellegű" className="rounded-lg" /></div>
+            <div className="space-y-2"><Label>Megjegyzések</Label><Textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={3} className="rounded-lg" /></div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>Mégse</Button>
-              <Button type="submit" disabled={submitting}>{submitting ? "Mentés..." : "Mentés"}</Button>
+              <Button type="button" variant="outline" onClick={() => setModalOpen(false)} className="rounded-lg">Mégse</Button>
+              <Button type="submit" disabled={submitting} className="rounded-lg">{submitting ? "Mentés..." : "Mentés"}</Button>
             </DialogFooter>
           </form>
         </DialogContent>

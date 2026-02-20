@@ -71,7 +71,12 @@ export default {
           "on-hold-bg": "hsl(var(--status-on-hold-bg))",
         },
       },
+      boxShadow: {
+        card: '0 1px 3px rgba(0, 0, 0, 0.08)',
+        'card-hover': '0 4px 12px rgba(0, 0, 0, 0.1)',
+      },
       borderRadius: {
+        xl: "calc(var(--radius) + 4px)",
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
@@ -84,6 +89,10 @@ export default {
         "accordion-up": {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
+        },
+        "hover-lift": {
+          "0%": { transform: "translateY(0)" },
+          "100%": { transform: "translateY(-2px)" },
         },
       },
       animation: {

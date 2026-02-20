@@ -1,4 +1,4 @@
-import { BarChart3, PawPrint, FolderOpen, Settings, LogOut } from "lucide-react";
+import { BarChart3, PawPrint, FolderOpen, Settings, LogOut, PieChart } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -18,6 +18,7 @@ const navItems = [
   { title: "Áttekintés", url: "/dashboard", icon: BarChart3 },
   { title: "Állatok", url: "/animals", icon: PawPrint },
   { title: "Import", url: "/import", icon: FolderOpen },
+  { title: "Riportok", url: "/reports", icon: PieChart },
   { title: "Beállítások", url: "/settings", icon: Settings },
 ];
 
@@ -29,17 +30,19 @@ export function AppSidebar() {
     : "SO";
 
   return (
-    <Sidebar>
+    <Sidebar className="bg-sidebar border-r-0">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-semibold">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-[hsl(143,47%,45%)] to-[hsl(170,50%,40%)] text-white text-sm font-bold shadow-md">
             🐾
           </div>
-          <span className="font-semibold text-base tracking-tight">ShelterOps</span>
+          <span className="font-bold text-base tracking-tight text-sidebar-foreground">ShelterOps</span>
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarSeparator className="bg-sidebar-border" />
+
+      <SidebarContent className="px-2 py-2">
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -48,8 +51,8 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink
                       to={item.url}
-                      className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                      activeClassName="bg-accent text-accent-foreground font-semibold"
+                      className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all text-[hsl(var(--sidebar-muted))] hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                      activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold border-l-[3px] border-sidebar-primary"
                     >
                       <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
@@ -63,23 +66,23 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-3">
-        <SidebarSeparator />
+        <SidebarSeparator className="bg-sidebar-border mb-3" />
         <div className="flex items-center gap-3 px-2 py-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sidebar-primary/20 text-xs font-semibold text-sidebar-primary">
             {initials}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{shelterInfo?.name ?? "ShelterOps"}</p>
-            <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+            <p className="text-sm font-medium truncate text-sidebar-foreground">{shelterInfo?.name ?? "ShelterOps"}</p>
+            <p className="text-xs truncate text-[hsl(var(--sidebar-muted))]">{user?.email}</p>
           </div>
+          <button
+            onClick={signOut}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-[hsl(var(--sidebar-muted))] hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+            title="Kijelentkezés"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
         </div>
-        <button
-          onClick={signOut}
-          className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-        >
-          <LogOut className="h-4 w-4" />
-          Kijelentkezés
-        </button>
       </SidebarFooter>
     </Sidebar>
   );
