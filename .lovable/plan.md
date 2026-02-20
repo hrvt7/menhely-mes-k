@@ -1,189 +1,142 @@
 
 
-# Premium UI Redesign -- Apple/Linear/Stripe Level
+# Animal Profile CV Layout + Dashboard Table Redesign + UI Polish
 
-Complete visual overhaul of every screen in ShelterOps, plus critical bug fixes for Import CSV and photo uploads.
+## Priority 1: Animal Profile -- CV/Resume Layout
 
----
+Complete restructure of `src/pages/AnimalProfile.tsx` from hero-banner layout to a sidebar+content layout inspired by a professional CV/resume.
 
-## Part 1: Design System Foundation
+### Left Sidebar (320px, sticky)
+- **Large photo**: 280px square, `rounded-2xl`, `object-cover`. If no photo, gradient placeholder with species emoji centered (e.g., dark-to-muted gradient with large emoji)
+- **Upload button** below photo: `+ Foto hozzaadasa` outline style
+- **Name**: `text-2xl font-bold` below photo
+- **Breed hint**: green text, small
+- **Status badge**: prominent colored pill
+- Divider
+- **Quick facts list** (icon + label pairs, vertically stacked):
+  - Faj: Kutya/Macska
+  - Nem: Kan/Szuka
+  - Kor: X eves
+  - Meret: Nagy/Kozepes
+  - Chip: monospace number
+  - Befogadva: date
+- Divider
+- **Status change buttons** (compact button group for switching status)
+- Divider
+- **Quick actions**: Bio generalasa (green primary), Facebook posztolas (outline)
 
-### `src/index.css`
-- Update all CSS variables to match new color palette:
-  - `--background`: #f6f8fa (GitHub-style gray)
-  - `--primary`: green-600 (#16a34a)
-  - `--border`: #e5e7eb
-  - `--foreground`: #111827
-  - `--muted-foreground`: #6b7280
-  - `--sidebar-background`: #0f1623
-  - `--sidebar-accent`: #1a2235
-  - Active sidebar: #1e3a2f
-- Add `font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11'` to body for Inter
-- Update card-shadow utility: `0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06)`
-- Add card-shadow-hover: `0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07)`
+### Right Main Content (flex-1, scrollable)
+Organized as sequential card sections with consistent headers (`text-xs font-semibold uppercase tracking-wider text-gray-400` + action button right-aligned):
 
-### `tailwind.config.ts`
-- Update boxShadow values to match new design tokens
-- Keep existing structure, just value changes
+1. **Bemutatkozo** (AI texts) -- most prominent, top position
+   - If AI text exists: show `ai_text_short` as main "about" paragraph
+   - If not generated: dashed border empty state card with sparkle icon + generate button
+   - `ai_text_long` and `ai_text_fit` as collapsible subsections below
 
----
+2. **Oltasok** -- moved UP to position 2 (high priority)
+   - Compact table with status badges: green "Ervenyes" / amber "Hamarosan lejar" / red "Lejart"
+   - `+ Uj oltas` button in section header
+   - Uses existing `VaccinationsSection` component (will be slightly restyled)
 
-## Part 2: Login Page -- Split Layout
+3. **Egeszsegugyi naplo** -- existing `HealthLogSection`, compact timeline
 
-### `src/pages/Login.tsx`
-- Split layout: left 40% dark (#0f1623) with paw background image at 8% opacity, right 60% white
-- Left side: ShelterOps logo, tagline "Az okos menhely szoftver", 3 feature bullets with CheckCircle icons
-- Right side: clean form (no outer card wrapper), "Udvozoljuk" h1, subtitle
-- Email/password inputs with Mail/Lock lucide icons inside (using relative positioning)
-- Password show/hide toggle with Eye/EyeOff icons
-- Green primary button full width with ArrowRight icon
-- Toggle link for register/login switch
-- On mobile: full-width form only (hide left panel)
+4. **Befogadasi adatok** -- collapsible (default open), clean 2-column grid, edit button
+   - Uses existing `IntakeSection` component
 
----
+5. **Dokumentumok** -- horizontal scroll card grid, upload button
+   - Uses existing `DocumentsSection` component
 
-## Part 3: Sidebar Redesign
+6. **Fotok** -- 4-column thumbnail grid, primary photo star badge, lightbox
+   - Reuse existing photo upload/display logic
 
-### `src/components/AppSidebar.tsx`
-- Background: #0f1623 (darker than current)
-- Logo: rounded-lg green gradient bg (#16a34a to #059669), white PawPrint icon, "ShelterOps" white font-semibold
-- Nav items: LayoutDashboard, PawPrint, Upload, BarChart3, Settings icons
-- Inactive: text-gray-400, hover bg-[#1a2235] text-gray-200
-- Active: bg-[#1e3a2f] text-green-400, left border 2px solid #16a34a
-- Bottom: green gradient avatar circle, shelter name white, email text-gray-500, logout icon hover text-red-400
-- Use thin border separators between sections
+7. **Orokbefogadoi adatok** -- conditional (status === adopted), uses `AdopterSection`
 
----
+8. **Elozmennyek** -- collapsible status log (existing audit log)
 
-## Part 4: Dashboard Overhaul
-
-### `src/pages/Dashboard.tsx`
-- Dynamic greeting based on time: "Jo reggelt/napot/estet, [Shelter name]!" with wave emoji
-- Today's date right-aligned
-- Stat cards: same 4 cards with refined shadows and hover translateY(-1px)
-- Quick action bar below stats: "+ Uj allat", "Import", "Bio generalas" as secondary buttons
-- Recent animals table expanded to 10 items (from 5)
-- Table columns: Allat (icon + name + chip monospace below), Faj/Kor, Statusz, AI checkmark, FB checkmark, Befogadva (relative date), arrow
-- Add chip_id display in the table as monospace text under animal name
-- Right side "Teendok" widget (or below table on small screens): overdue vaccines count, ready-to-post count, long-residents count (>30 days)
-- Replace emoji icons in banners with Lucide icons
+### Responsive behavior
+- On mobile (`< lg`): stack vertically, sidebar becomes full-width top section with horizontal photo + info layout
+- Back link remains at top
 
 ---
 
-## Part 5: Animals List Redesign
+## Priority 2: Dashboard Table -- Replace AI/FB with Vaccination Column
 
-### `src/pages/Animals.tsx`
-- Filter bar: Search input with Search icon inside, rounded-lg
-- Status filter as pill toggle buttons (not dropdown): All / Elerheto / Foglalt / Orokbefogadva / Varakozas
-- Species filter as pill toggles: Mind / Kutya / Macska / Egyeb
-- Table: sticky header bg-[#f9fafb], columns: Allat (icon+name+chip monospace), Kor/Meret, Statusz, AI, Facebook, Befogadva, arrow
-- Chip number shown under name in `font-mono text-xs text-gray-400`
-- Row hover bg-[#f9fafb]
-- All rows clickable (already done)
+### Modified: `src/pages/Dashboard.tsx`
 
----
+**Remove columns**: AI, FB (lines 202-203 headers + cells at 224-231)
 
-## Part 6: Animal Profile Redesign
+**New column**: "Oltas" -- vaccination status per animal
 
-### `src/pages/AnimalProfile.tsx`
-- Hero section: full-width gradient banner #0f1623 to #1a2235, 200px height
-- Large species icon or photo (circular, 100px, white border) overlapping hero bottom
-- Name: text-3xl font-bold text-white centered
-- Breed hint: text-green-400 below
-- Status badge top-right
-- Action buttons row: "Bio generalasa" / "Facebook" / "Szerkesztes"
-- Data pills row: white card with chip, age, sex, size, intake date as icon+label items
-- 2-column layout: left (1/3) for data cards, right (2/3) for AI texts, photos, health tabs
-- Photo section: implement actual upload using Supabase Storage `animal-photos` bucket
-  - Upload button -> file picker (image/*) -> upload to `animal-photos/{shelter_id}/{animal_id}/{filename}`
-  - Get signed URL -> insert into `animal_photos` table
-  - Display in 3-column thumbnail grid
-  - Primary photo with star badge
-  - Click thumbnail for lightbox modal
-- Need to create storage bucket `animal-photos` via migration
+**Data fetching**: extend the existing vaccination query to return per-animal vaccination status, not just overdue count. Fetch all `animal_vaccinations` for the shelter's recent animals and compute:
+- Green dot + "Rendben" if all next_due_dates are in the future
+- Amber "Hamarosan" if any next_due_date within 30 days  
+- Red "Lejart" if any next_due_date < today
+- Gray dash if no vaccinations recorded
+
+**New table columns**:
+```
+Allat | Faj / Kor | Statusz | Befogadva | Oltas | ->
+```
 
 ---
 
-## Part 7: Import Page Bug Fix
+## Priority 3: StatusBadge Redesign
 
-### `src/pages/Import.tsx`
-- Fix chip_id crash: convert all field values to String before .trim()
-  - `String(row[mapping.chip_id] ?? '').trim() || null` for every field
-- Apply same pattern to: name, species, status, sex, size, breed_hint, notes
-- Read file with UTF-8 encoding explicitly: `reader.readAsText(file, 'UTF-8')` for CSV, keep binary for XLSX
-- Premium card styling consistent with rest of app
+### Modified: `src/components/StatusBadge.tsx`
 
----
-
-## Part 8: Settings and Setup Polish
-
-### `src/pages/SettingsPage.tsx`
-- Replace spinner with skeleton loading
-- Section cards with subtle header separators
-- Input styling: focus ring green, rounded-lg
-- Premium card styling
-
-### `src/pages/Setup.tsx`
-- Match login page aesthetic: centered card with gradient accent
-- Replace house emoji with Lucide Building icon
+Update to softer background colors with borders:
+- Elerheto: `bg-emerald-50 text-emerald-700 border border-emerald-200`
+- Foglalt: `bg-amber-50 text-amber-700 border border-amber-200`
+- Orokbefogadva: `bg-blue-50 text-blue-700 border border-blue-200`
+- Varakozas: `bg-gray-50 text-gray-600 border border-gray-200`
 
 ---
 
-## Part 9: Reports Page Polish
+## Priority 4: Global UI Polish
 
-### `src/pages/Reports.tsx`
-- Update chart colors to match new primary (#16a34a) and blue (#3b82f6)
-- Premium card styling consistency
+### Cards
+- Increase padding to `p-6` on main content cards
+- Add `border border-gray-100 hover:border-gray-200 transition-colors` to interactive cards
+
+### Section headers pattern
+```
+<div class="flex items-center justify-between mb-4">
+  <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-400">SECTION NAME</h3>
+  <button>+ Action</button>
+</div>
+```
+
+### Sidebar icons
+- Increase icon size from `h-4 w-4` to `h-[18px] w-[18px]` in `AppSidebar.tsx`
+
+### Table rows
+- Minimum row height: `py-3.5` (approximately 56px with content)
+- More breathing room in cells
+
+### Page headers
+- Add `border-b border-gray-100 pb-4 mb-6` to page header divs in Dashboard, Animals, Import, Reports, Settings
+
+### Input focus states
+- Update in `src/index.css`: add focus ring style `ring-2 ring-green-500/20 border-green-500`
+
+### Empty states
+- Every empty list should have: centered icon/emoji (large, muted), title text, subtitle, and action button
 
 ---
 
-## Part 10: Toast System
+## Files Modified
 
-### `src/components/ui/sonner.tsx` or toast config
-- Position: bottom-right
-- Style updates: white card with colored left border + Lucide icon
-- Duration: 4 seconds
+| File | Changes |
+|------|---------|
+| `src/pages/AnimalProfile.tsx` | Complete restructure to CV layout |
+| `src/pages/Dashboard.tsx` | Replace AI/FB columns with vaccination column, add per-animal vax status query |
+| `src/components/StatusBadge.tsx` | Softer badge colors with borders |
+| `src/components/AppSidebar.tsx` | Larger icons (18px) |
+| `src/index.css` | Input focus ring styles |
+| `src/pages/Animals.tsx` | Page header border, row height increase |
+| `src/pages/Import.tsx` | Page header border |
+| `src/pages/Reports.tsx` | Page header border |
+| `src/pages/SettingsPage.tsx` | Page header border |
 
----
-
-## Part 11: Storage Bucket for Photos
-
-### Database migration
-- Create `animal-photos` storage bucket (public: true for serving images)
-- RLS policies on storage.objects for authenticated users scoped to their shelter folder
-
----
-
-## Technical Details
-
-### Files to modify:
-1. `src/index.css` -- CSS variables, font settings, shadow utilities
-2. `tailwind.config.ts` -- shadow values update
-3. `src/pages/Login.tsx` -- complete redesign with split layout
-4. `src/components/AppSidebar.tsx` -- darker theme, refined nav
-5. `src/components/AppLayout.tsx` -- header bar refinement
-6. `src/pages/Dashboard.tsx` -- greeting, quick actions, expanded table, tasks widget
-7. `src/pages/Animals.tsx` -- pill filters, chip display, refined table
-8. `src/pages/AnimalProfile.tsx` -- hero banner, photo upload, layout restructure
-9. `src/pages/Import.tsx` -- bug fix (String conversion), UTF-8 encoding
-10. `src/pages/SettingsPage.tsx` -- skeleton loading, premium styling
-11. `src/pages/Setup.tsx` -- visual polish
-12. `src/pages/Reports.tsx` -- color updates
-13. `src/components/StatusBadge.tsx` -- minor refinement
-14. `src/lib/constants.ts` -- add relative date helper function
-15. `index.html` -- verify charset UTF-8 meta tag
-16. `src/components/ui/sonner.tsx` -- toast position/style
-
-### New file:
-- None (photo upload logic integrated into AnimalProfile.tsx)
-
-### Database migration:
-- Create `animal-photos` storage bucket + RLS policies
-
-### Dependencies:
-- No new dependencies needed
-- All icons from lucide-react (LayoutDashboard, Upload, Mail, Lock, Eye, EyeOff, ArrowRight, Search, Building, etc.)
-
-### Paw background image:
-- User will attach the image; it will be placed in `public/` or `src/assets/` and referenced via CSS/inline style with 3-8% opacity on login page left panel and optionally sidebar bottom
+No new files or dependencies needed. All changes use existing components and patterns.
 
