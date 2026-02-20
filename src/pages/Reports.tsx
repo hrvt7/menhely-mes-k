@@ -13,7 +13,7 @@ import type { Tables } from "@/integrations/supabase/types";
 type Animal = Tables<"animals">;
 
 const MONTHS_HU = ["Jan", "Feb", "Már", "Ápr", "Máj", "Jún", "Júl", "Aug", "Szep", "Okt", "Nov", "Dec"];
-const PIE_COLORS = ["hsl(143, 47%, 33%)", "hsl(224, 76%, 48%)", "hsl(33, 96%, 37%)", "hsl(220, 9%, 46%)"];
+const PIE_COLORS = ["hsl(142, 72%, 29%)", "hsl(224, 76%, 48%)", "hsl(33, 96%, 37%)", "hsl(220, 9%, 46%)"];
 
 export default function Reports() {
   const { shelterId } = useAuth();
@@ -180,8 +180,8 @@ export default function Reports() {
               <XAxis dataKey="name" tick={{ fontSize: 12 }} />
               <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
               <Tooltip />
-              <Bar dataKey="Befogadott" fill="hsl(143, 47%, 33%)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="Örökbeadott" fill="hsl(224, 76%, 48%)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="Befogadott" fill="hsl(142, 72%, 29%)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="Örökbeadott" fill="hsl(217, 91%, 60%)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
