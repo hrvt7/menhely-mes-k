@@ -34,7 +34,7 @@ export default function Setup() {
       .single();
 
     if (shelterErr || !shelter) {
-      toast({ title: "Hiba", description: "Nem sikerült létrehozni a menhelyet.", variant: "destructive" });
+      toast({ title: "Hiba", description: shelterErr?.message || "Nem sikerült létrehozni a menhelyet.", variant: "destructive" });
       setSubmitting(false);
       return;
     }
@@ -44,7 +44,7 @@ export default function Setup() {
       .insert({ user_id: user.id, shelter_id: shelter.id, role: "admin" });
 
     if (suErr) {
-      toast({ title: "Hiba", description: "Nem sikerült a felhasználó hozzárendelése.", variant: "destructive" });
+      toast({ title: "Hiba", description: suErr.message || "Nem sikerült a felhasználó hozzárendelése.", variant: "destructive" });
       setSubmitting(false);
       return;
     }

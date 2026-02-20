@@ -43,9 +43,17 @@ export function formatAge(dateOfBirth: string | null, ageYears: number | null): 
   return "—";
 }
 
+const HU_CHAR_MAP: Record<string, string> = {
+  á: "a", é: "e", í: "i", ó: "o", ö: "o", ő: "o", ú: "u", ü: "u", ű: "u",
+  Á: "a", É: "e", Í: "i", Ó: "o", Ö: "o", Ő: "o", Ú: "u", Ü: "u", Ű: "u",
+};
+
 export function generateSlug(name: string): string {
-  const base = name.toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+  const base = name
+    .toLowerCase()
+    .split("")
+    .map(ch => HU_CHAR_MAP[ch] ?? ch)
+    .join("")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
   const rand = Math.random().toString(36).substring(2, 6);
