@@ -14,6 +14,111 @@ export type Database = {
   }
   public: {
     Tables: {
+      animal_documents: {
+        Row: {
+          animal_id: string
+          created_at: string | null
+          document_type: string
+          file_name: string
+          id: string
+          notes: string | null
+          shelter_id: string
+          storage_path: string
+          uploaded_by: string | null
+          url: string | null
+        }
+        Insert: {
+          animal_id: string
+          created_at?: string | null
+          document_type: string
+          file_name: string
+          id?: string
+          notes?: string | null
+          shelter_id: string
+          storage_path: string
+          uploaded_by?: string | null
+          url?: string | null
+        }
+        Update: {
+          animal_id?: string
+          created_at?: string | null
+          document_type?: string
+          file_name?: string
+          id?: string
+          notes?: string | null
+          shelter_id?: string
+          storage_path?: string
+          uploaded_by?: string | null
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "animal_documents_animal_id_fkey"
+            columns: ["animal_id"]
+            isOneToOne: false
+            referencedRelation: "animals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "animal_documents_shelter_id_fkey"
+            columns: ["shelter_id"]
+            isOneToOne: false
+            referencedRelation: "shelters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      animal_health_log: {
+        Row: {
+          animal_id: string
+          category: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string
+          entry_date: string
+          id: string
+          shelter_id: string
+          vet_name: string | null
+        }
+        Insert: {
+          animal_id: string
+          category?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description: string
+          entry_date?: string
+          id?: string
+          shelter_id: string
+          vet_name?: string | null
+        }
+        Update: {
+          animal_id?: string
+          category?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string
+          entry_date?: string
+          id?: string
+          shelter_id?: string
+          vet_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "animal_health_log_animal_id_fkey"
+            columns: ["animal_id"]
+            isOneToOne: false
+            referencedRelation: "animals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "animal_health_log_shelter_id_fkey"
+            columns: ["shelter_id"]
+            isOneToOne: false
+            referencedRelation: "shelters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       animal_photos: {
         Row: {
           animal_id: string
@@ -90,21 +195,85 @@ export type Database = {
           },
         ]
       }
+      animal_vaccinations: {
+        Row: {
+          administered_date: string
+          animal_id: string
+          created_at: string | null
+          id: string
+          next_due_date: string | null
+          notes: string | null
+          shelter_id: string
+          vaccine_name: string
+          vet_name: string | null
+        }
+        Insert: {
+          administered_date: string
+          animal_id: string
+          created_at?: string | null
+          id?: string
+          next_due_date?: string | null
+          notes?: string | null
+          shelter_id: string
+          vaccine_name: string
+          vet_name?: string | null
+        }
+        Update: {
+          administered_date?: string
+          animal_id?: string
+          created_at?: string | null
+          id?: string
+          next_due_date?: string | null
+          notes?: string | null
+          shelter_id?: string
+          vaccine_name?: string
+          vet_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "animal_vaccinations_animal_id_fkey"
+            columns: ["animal_id"]
+            isOneToOne: false
+            referencedRelation: "animals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "animal_vaccinations_shelter_id_fkey"
+            columns: ["shelter_id"]
+            isOneToOne: false
+            referencedRelation: "shelters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       animals: {
         Row: {
           adopted_at: string | null
+          adopter_email: string | null
+          adopter_name: string | null
+          adopter_phone: string | null
           age_years: number | null
           ai_text_fit: string | null
           ai_text_long: string | null
           ai_text_short: string | null
+          background_estimate: string | null
           breed_hint: string | null
+          chip_date: string | null
           chip_id: string | null
+          chip_status: string | null
+          chip_vet: string | null
           created_at: string | null
           date_of_birth: string | null
           fb_post_id: string | null
           fb_post_url: string | null
           fb_posted_at: string | null
+          followup_date: string | null
+          followup_done: boolean | null
           id: string
+          intake_condition: string | null
+          intake_date: string | null
+          intake_method: string | null
+          intake_person: string | null
           is_ready_to_post: boolean | null
           name: string
           notes: string | null
@@ -117,18 +286,31 @@ export type Database = {
         }
         Insert: {
           adopted_at?: string | null
+          adopter_email?: string | null
+          adopter_name?: string | null
+          adopter_phone?: string | null
           age_years?: number | null
           ai_text_fit?: string | null
           ai_text_long?: string | null
           ai_text_short?: string | null
+          background_estimate?: string | null
           breed_hint?: string | null
+          chip_date?: string | null
           chip_id?: string | null
+          chip_status?: string | null
+          chip_vet?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           fb_post_id?: string | null
           fb_post_url?: string | null
           fb_posted_at?: string | null
+          followup_date?: string | null
+          followup_done?: boolean | null
           id?: string
+          intake_condition?: string | null
+          intake_date?: string | null
+          intake_method?: string | null
+          intake_person?: string | null
           is_ready_to_post?: boolean | null
           name: string
           notes?: string | null
@@ -141,18 +323,31 @@ export type Database = {
         }
         Update: {
           adopted_at?: string | null
+          adopter_email?: string | null
+          adopter_name?: string | null
+          adopter_phone?: string | null
           age_years?: number | null
           ai_text_fit?: string | null
           ai_text_long?: string | null
           ai_text_short?: string | null
+          background_estimate?: string | null
           breed_hint?: string | null
+          chip_date?: string | null
           chip_id?: string | null
+          chip_status?: string | null
+          chip_vet?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           fb_post_id?: string | null
           fb_post_url?: string | null
           fb_posted_at?: string | null
+          followup_date?: string | null
+          followup_done?: boolean | null
           id?: string
+          intake_condition?: string | null
+          intake_date?: string | null
+          intake_method?: string | null
+          intake_person?: string | null
           is_ready_to_post?: boolean | null
           name?: string
           notes?: string | null
