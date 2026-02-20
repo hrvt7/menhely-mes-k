@@ -26,32 +26,42 @@ export default function Setup() {
     e.preventDefault();
     setSubmitting(true);
 
-    const slug = generateSlug(name);
-    const { data: shelter, error: shelterErr } = await supabase
-      .from("shelters")
-      .insert({ name, slug, contact_email: email || null, contact_phone: phone || null })
-      .select("id")
-      .single();
+    try {
+      console.log("Setup: user =", user?.id, user?.email);
 
-    if (shelterErr || !shelter) {
-      toast({ title: "Hiba", description: shelterErr?.message || "Nem sikerült létrehozni a menhelyet.", variant: "destructive" });
+      const slug = generateSlug(name);
+      const shelterId = crypto.randomUUID();
+
+      // Insert shelter with pre-generated ID so we don't need .select() which triggers SELECT RLS
+      const { error: shelterErr } = await supabase
+        .from("shelters")
+        .insert({ id: shelterId, name, slug, contact_email: email || null, contact_phone: phone || null });
+
+      if (shelterErr) {
+        console.error("Shelter insert error:", JSON.stringify(shelterErr));
+        toast({ title: "Hiba", description: `Menhely létrehozás sikertelen: ${shelterErr.message}`, variant: "destructive" });
+        setSubmitting(false);
+        return;
+      }
+
+      const { error: suErr } = await supabase
+        .from("shelter_users")
+        .insert({ user_id: user!.id, shelter_id: shelterId, role: "admin" });
+
+      if (suErr) {
+        console.error("Shelter_users insert error:", JSON.stringify(suErr));
+        toast({ title: "Hiba", description: `Felhasználó hozzárendelés sikertelen: ${suErr.message}`, variant: "destructive" });
+        setSubmitting(false);
+        return;
+      }
+
+      toast({ title: "Kész!", description: "Munkaterület létrehozva." });
+      window.location.href = "/dashboard";
+    } catch (err: any) {
+      console.error("Setup unexpected error:", err);
+      toast({ title: "Hiba", description: err?.message || "Váratlan hiba történt.", variant: "destructive" });
       setSubmitting(false);
-      return;
     }
-
-    const { error: suErr } = await supabase
-      .from("shelter_users")
-      .insert({ user_id: user.id, shelter_id: shelter.id, role: "admin" });
-
-    if (suErr) {
-      toast({ title: "Hiba", description: suErr.message || "Nem sikerült a felhasználó hozzárendelése.", variant: "destructive" });
-      setSubmitting(false);
-      return;
-    }
-
-    toast({ title: "Kész!", description: "Munkaterület létrehozva." });
-    // Force reload to refresh auth context
-    window.location.href = "/dashboard";
   };
 
   return (
