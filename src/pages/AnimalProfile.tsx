@@ -13,6 +13,11 @@ import { useToast } from "@/hooks/use-toast";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ChevronDown, Copy, Sparkles, ClipboardList, ImageOff } from "lucide-react";
+import { IntakeSection } from "@/components/animal/IntakeSection";
+import { VaccinationsSection } from "@/components/animal/VaccinationsSection";
+import { HealthLogSection } from "@/components/animal/HealthLogSection";
+import { DocumentsSection } from "@/components/animal/DocumentsSection";
+import { AdopterSection } from "@/components/animal/AdopterSection";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Animal = Tables<"animals">;
@@ -184,6 +189,12 @@ export default function AnimalProfile() {
             </CardContent>
           </Card>
 
+          {/* Intake section */}
+          <IntakeSection animal={animal} onSaved={fetchAnimal} />
+
+          {/* Adopter section - only when adopted */}
+          {animal.status === "adopted" && <AdopterSection animal={animal} onSaved={fetchAnimal} />}
+
           {/* Facebook card */}
           <Card className="rounded-xl shadow-card">
             <CardHeader className="pb-3"><CardTitle className="text-sm font-medium">Facebook</CardTitle></CardHeader>
@@ -294,6 +305,24 @@ export default function AnimalProfile() {
           </Collapsible>
         </div>
       </div>
+
+      {/* Full-width tabbed sections */}
+      <Tabs defaultValue="vaccinations" className="w-full">
+        <TabsList className="w-full justify-start">
+          <TabsTrigger value="vaccinations">💉 Oltások</TabsTrigger>
+          <TabsTrigger value="health">🩺 Egészségügyi napló</TabsTrigger>
+          <TabsTrigger value="documents">📁 Dokumentumok</TabsTrigger>
+        </TabsList>
+        <TabsContent value="vaccinations" className="mt-4">
+          {shelterId && <VaccinationsSection animalId={animal.id} shelterId={shelterId} />}
+        </TabsContent>
+        <TabsContent value="health" className="mt-4">
+          {shelterId && <HealthLogSection animalId={animal.id} shelterId={shelterId} />}
+        </TabsContent>
+        <TabsContent value="documents" className="mt-4">
+          {shelterId && <DocumentsSection animalId={animal.id} shelterId={shelterId} />}
+        </TabsContent>
+      </Tabs>
 
       {/* Status confirm modal */}
       <Dialog open={!!confirmStatus} onOpenChange={() => setConfirmStatus(null)}>
