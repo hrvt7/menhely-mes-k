@@ -45,6 +45,7 @@ export default function Dashboard() {
   const [animals, setAnimals] = useState<Animal[]>([]);
   const [loading, setLoading] = useState(true);
   const [overdueCount, setOverdueCount] = useState(0);
+  const [vaxMap, setVaxMap] = useState<Record<string, { status: "ok" | "soon" | "overdue"; date?: string }>>({});
 
   useEffect(() => {
     if (!shelterId) return;
@@ -57,16 +58,38 @@ export default function Dashboard() {
         setAnimals(data ?? []);
         setLoading(false);
       });
-    const today = new Date().toISOString().slice(0, 10);
+    // Fetch all vaccinations for per-animal status
     supabase
       .from("animal_vaccinations")
-      .select("animal_id, animals!inner(status)")
+      .select("animal_id, next_due_date")
       .eq("shelter_id", shelterId)
-      .lt("next_due_date", today)
-      .in("animals.status", ["available", "reserved"])
       .then(({ data }) => {
-        const uniqueAnimals = new Set((data ?? []).map((d: any) => d.animal_id));
-        setOverdueCount(uniqueAnimals.size);
+        const map: Record<string, { status: "ok" | "soon" | "overdue"; date?: string }> = {};
+        const today = new Date();
+        const soon30 = new Date();
+        soon30.setDate(soon30.getDate() + 30);
+        let overdueSet = new Set<string>();
+
+        (data ?? []).forEach((v: any) => {
+          const aid = v.animal_id;
+          if (!v.next_due_date) {
+            if (!map[aid]) map[aid] = { status: "ok" };
+            return;
+          }
+          const due = new Date(v.next_due_date);
+          if (due < today) {
+            map[aid] = { status: "overdue", date: v.next_due_date };
+            overdueSet.add(aid);
+          } else if (due <= soon30) {
+            if (map[aid]?.status !== "overdue") {
+              map[aid] = { status: "soon", date: v.next_due_date };
+            }
+          } else {
+            if (!map[aid]) map[aid] = { status: "ok" };
+          }
+        });
+        setVaxMap(map);
+        setOverdueCount(overdueSet.size);
       });
   }, [shelterId]);
 
@@ -101,7 +124,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between border-b border-border pb-4 mb-2">
         <h1 className="text-2xl font-semibold tracking-tight">
           {getGreeting()}, {shelterInfo?.name ?? "ShelterOps"}! 👋
         </h1>
@@ -199,9 +222,8 @@ export default function Dashboard() {
                       <th className="px-5 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Állat</th>
                       <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Faj / Kor</th>
                       <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Státusz</th>
-                      <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">AI</th>
-                      <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">FB</th>
                       <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Befogadva</th>
+                      <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Oltás</th>
                       <th className="px-3 py-2.5"></th>
                     </tr>
                   </thead>
@@ -210,7 +232,7 @@ export default function Dashboard() {
                       const sp = SPECIES_CONFIG[a.species as keyof typeof SPECIES_CONFIG] ?? SPECIES_CONFIG.other;
                       return (
                         <tr key={a.id} className="border-b border-border last:border-0 hover:bg-accent/30 transition-colors">
-                          <td className="px-5 py-3">
+                          <td className="px-5 py-3.5">
                             <Link to={`/animals/${a.id}`} className="flex items-center gap-3">
                               <span className="text-lg">{sp.emoji}</span>
                               <div>
@@ -221,17 +243,8 @@ export default function Dashboard() {
                           </td>
                           <td className="px-3 py-3 text-muted-foreground">{sp.label} · {formatAge(a.date_of_birth, a.age_years)}</td>
                           <td className="px-3 py-3"><StatusBadge status={a.status} /></td>
-                          <td className="px-3 py-3">
-                            {a.ai_text_short
-                              ? <CheckCircle2 className="h-4 w-4 text-primary" />
-                              : <span className="text-muted-foreground">—</span>}
-                          </td>
-                          <td className="px-3 py-3">
-                            {a.fb_post_id
-                              ? <CheckCircle2 className="h-4 w-4 text-status-adopted" />
-                              : <span className="text-muted-foreground">—</span>}
-                          </td>
                           <td className="px-3 py-3 text-muted-foreground text-xs">{relativeDate(a.created_at)}</td>
+                          <td className="px-3 py-3"><VaxStatusCell animalId={a.id} vaxMap={vaxMap} /></td>
                           <td className="px-3 py-3">
                             <Link to={`/animals/${a.id}`}><ChevronRight className="h-4 w-4 text-muted-foreground" /></Link>
                           </td>
@@ -276,5 +289,29 @@ export default function Dashboard() {
         </Card>
       </div>
     </div>
+  );
+}
+
+function VaxStatusCell({ animalId, vaxMap }: { animalId: string; vaxMap: Record<string, { status: "ok" | "soon" | "overdue"; date?: string }> }) {
+  const entry = vaxMap[animalId];
+  if (!entry) return <span className="text-muted-foreground">–</span>;
+  if (entry.status === "overdue") {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600">
+        <span className="h-1.5 w-1.5 rounded-full bg-red-500" /> Lejárt
+      </span>
+    );
+  }
+  if (entry.status === "soon") {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600">
+        <span className="h-1.5 w-1.5 rounded-full bg-amber-500" /> Hamarosan
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600">
+      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Rendben
+    </span>
   );
 }

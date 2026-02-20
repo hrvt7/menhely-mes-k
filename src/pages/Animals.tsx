@@ -144,7 +144,7 @@ export default function Animals() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between border-b border-border pb-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Állatok</h1>
           <p className="text-sm text-muted-foreground">{animals.length} állat</p>
@@ -226,7 +226,7 @@ export default function Animals() {
                       onClick={() => navigate(`/animals/${a.id}`)}
                       className="border-b border-border last:border-0 hover:bg-accent/30 transition-colors duration-150 cursor-pointer"
                     >
-                      <td className="px-5 py-3">
+                      <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
                           <span className="text-lg">{sp.emoji}</span>
                           <div>

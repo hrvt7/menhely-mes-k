@@ -146,7 +146,7 @@ export default function Import() {
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-semibold tracking-tight">Import</h1>
+      <h1 className="text-2xl font-semibold tracking-tight border-b border-border pb-4">Import</h1>
 
       {/* Progress */}
       <div className="flex items-center gap-2">

@@ -2,17 +2,20 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, Navigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
 import { STATUS_CONFIG, SPECIES_CONFIG, SEX_CONFIG, SIZE_CONFIG, formatAge, type AnimalStatus } from "@/lib/constants";
 import { useToast } from "@/hooks/use-toast";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { ChevronDown, Copy, Sparkles, ClipboardList, Plus, Star, X, ChevronLeft, Microchip, Calendar, Dog, Ruler, Users } from "lucide-react";
+import {
+  ChevronDown, Copy, Sparkles, ClipboardList, Plus, Star, X, ChevronLeft,
+  Microchip, Calendar, Dog, Ruler, Users, Upload, PawPrint, Cat, HelpCircle
+} from "lucide-react";
 import { IntakeSection } from "@/components/animal/IntakeSection";
 import { VaccinationsSection } from "@/components/animal/VaccinationsSection";
 import { HealthLogSection } from "@/components/animal/HealthLogSection";
@@ -23,6 +26,8 @@ import type { Tables } from "@/integrations/supabase/types";
 type Animal = Tables<"animals">;
 type StatusLog = Tables<"animal_status_log">;
 type AnimalPhoto = Tables<"animal_photos">;
+
+const SPECIES_ICONS: Record<string, typeof Dog> = { dog: Dog, cat: Cat };
 
 export default function AnimalProfile() {
   const { id } = useParams<{ id: string }>();
@@ -59,11 +64,13 @@ export default function AnimalProfile() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-48 rounded-xl" />
-        <div className="flex gap-3">{[1,2,3,4].map(i => <Skeleton key={i} className="h-8 w-24 rounded-full" />)}</div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Skeleton className="h-64 rounded-xl" />
-          <Skeleton className="h-64 rounded-xl lg:col-span-2" />
+        <Skeleton className="h-6 w-20" />
+        <div className="flex flex-col lg:flex-row gap-6">
+          <Skeleton className="w-full lg:w-80 h-96 rounded-2xl" />
+          <div className="flex-1 space-y-4">
+            <Skeleton className="h-48 rounded-xl" />
+            <Skeleton className="h-48 rounded-xl" />
+          </div>
         </div>
       </div>
     );
@@ -73,6 +80,7 @@ export default function AnimalProfile() {
   const sp = SPECIES_CONFIG[animal.species as keyof typeof SPECIES_CONFIG] ?? SPECIES_CONFIG.other;
   const sex = SEX_CONFIG[animal.sex as keyof typeof SEX_CONFIG] ?? SEX_CONFIG.unknown;
   const size = SIZE_CONFIG[animal.size as keyof typeof SIZE_CONFIG];
+  const SpeciesIcon = SPECIES_ICONS[animal.species] ?? PawPrint;
 
   const handleStatusChange = async (newStatus: string) => {
     const { error } = await supabase.from("animals").update({
@@ -157,15 +165,15 @@ export default function AnimalProfile() {
 
   const otherStatuses = Object.keys(STATUS_CONFIG).filter(s => s !== animal.status) as AnimalStatus[];
   const hasAi = animal.ai_text_short || animal.ai_text_long || animal.ai_text_fit;
-  const primaryPhoto = photos.find(p => p.is_primary);
+  const primaryPhoto = photos.find(p => p.is_primary) ?? photos[0];
 
-  const dataPills = [
-    { icon: Dog, label: sp.label },
-    { icon: Users, label: sex.label },
-    { icon: Calendar, label: formatAge(animal.date_of_birth, animal.age_years) },
-    ...(size ? [{ icon: Ruler, label: size.label }] : []),
-    ...(animal.chip_id ? [{ icon: Microchip, label: animal.chip_id }] : []),
-    ...(animal.intake_date ? [{ icon: Calendar, label: new Date(animal.intake_date).toLocaleDateString("hu-HU") }] : []),
+  const quickFacts = [
+    { icon: SpeciesIcon, label: "Faj", value: sp.label },
+    { icon: Users, label: "Nem", value: sex.label },
+    { icon: Calendar, label: "Kor", value: formatAge(animal.date_of_birth, animal.age_years) },
+    ...(size ? [{ icon: Ruler, label: "Méret", value: size.label }] : []),
+    ...(animal.chip_id ? [{ icon: Microchip, label: "Chip", value: animal.chip_id, mono: true }] : []),
+    ...(animal.intake_date ? [{ icon: Calendar, label: "Befogadva", value: new Date(animal.intake_date).toLocaleDateString("hu-HU") }] : []),
   ];
 
   return (
@@ -175,191 +183,239 @@ export default function AnimalProfile() {
         <ChevronLeft className="h-4 w-4" /> Állatok
       </Link>
 
-      {/* Hero banner */}
-      <div className="relative rounded-xl overflow-hidden" style={{ background: 'linear-gradient(135deg, hsl(222,55%,7%), hsl(222,30%,16%))' }}>
-        <div className="h-48 flex items-end justify-center pb-0 relative">
-          <StatusBadge status={animal.status} />
-          <div className="absolute top-4 right-4">
-            <StatusBadge status={animal.status} />
-          </div>
-        </div>
-        <div className="flex flex-col items-center -mt-12 pb-6 relative z-10">
-          <div className="h-24 w-24 rounded-full bg-card border-4 border-card flex items-center justify-center text-4xl shadow-card-hover overflow-hidden">
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* ========== LEFT SIDEBAR ========== */}
+        <aside className="w-full lg:w-80 shrink-0 lg:sticky lg:top-6 lg:self-start space-y-5">
+          {/* Photo */}
+          <div className="relative">
             {primaryPhoto?.url ? (
-              <img src={primaryPhoto.url} alt={animal.name} className="h-full w-full object-cover" />
+              <img
+                src={primaryPhoto.url}
+                alt={animal.name}
+                className="w-full aspect-square rounded-2xl object-cover shadow-card"
+                style={{ maxHeight: 280 }}
+              />
             ) : (
-              sp.emoji
+              <div
+                className="w-full aspect-square rounded-2xl flex items-center justify-center shadow-card"
+                style={{ maxHeight: 280, background: 'linear-gradient(135deg, hsl(222,55%,7%), hsl(222,30%,16%))' }}
+              >
+                <span className="text-6xl">{sp.emoji}</span>
+              </div>
             )}
           </div>
-          <h1 className="text-2xl font-bold text-white mt-3">{animal.name}</h1>
-          {animal.breed_hint && <p className="text-primary text-sm">{animal.breed_hint} jellegű</p>}
-        </div>
-      </div>
 
-      {/* Action buttons */}
-      <div className="flex flex-wrap gap-2">
-        <Button onClick={handleGenerate} disabled={generating} size="sm" className="gap-2 rounded-lg">
-          <Sparkles className="h-4 w-4" />
-          {generating ? "Generálás..." : hasAi ? "Újragenerálás" : "Bio generálása"}
-        </Button>
-        {animal.fb_post_url ? (
-          <a href={animal.fb_post_url} target="_blank" rel="noreferrer">
-            <Button variant="outline" size="sm" className="rounded-lg">Facebook poszt →</Button>
-          </a>
-        ) : (
-          <Button variant="outline" size="sm" disabled={!animal.ai_text_short} className="rounded-lg">
-            Facebook posztolás
-          </Button>
-        )}
-      </div>
+          {/* Upload button */}
+          <label className="w-full">
+            <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+            <Button variant="outline" size="sm" className="w-full gap-2 rounded-lg cursor-pointer" asChild disabled={uploading}>
+              <span><Upload className="h-4 w-4" /> {uploading ? "Feltöltés..." : "+ Fotó hozzáadása"}</span>
+            </Button>
+          </label>
 
-      {/* Data pills */}
-      <Card className="rounded-xl shadow-card">
-        <CardContent className="p-4">
-          <div className="flex flex-wrap gap-4">
-            {dataPills.map((pill, i) => (
-              <div key={i} className="flex items-center gap-2 text-sm">
-                <pill.icon className="h-4 w-4 text-muted-foreground" />
-                <span className={`${pill.icon === Microchip ? 'font-mono text-xs' : ''}`}>{pill.label}</span>
-                {i < dataPills.length - 1 && <span className="text-border ml-2">|</span>}
+          {/* Name & breed */}
+          <div>
+            <h1 className="text-2xl font-bold">{animal.name}</h1>
+            {animal.breed_hint && <p className="text-sm text-primary mt-0.5">{animal.breed_hint} jellegű</p>}
+            <div className="mt-2">
+              <StatusBadge status={animal.status} />
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Quick facts */}
+          <div className="space-y-3">
+            {quickFacts.map((fact, i) => (
+              <div key={i} className="flex items-center gap-3 text-sm">
+                <fact.icon className="h-4 w-4 text-muted-foreground shrink-0" />
+                <span className="text-muted-foreground">{fact.label}</span>
+                <span className={`ml-auto font-medium ${'mono' in fact && fact.mono ? 'font-mono text-xs' : ''}`}>{fact.value}</span>
               </div>
             ))}
           </div>
-        </CardContent>
-      </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* LEFT COLUMN */}
-        <div className="space-y-4">
-          {/* Profile details */}
-          <Card className="rounded-xl shadow-card">
-            <CardContent className="p-5">
-              <div className="space-y-2 text-sm">
-                <Row label="Faj" value={sp.label} />
-                <Row label="Nem" value={sex.label} />
-                <Row label="Kor" value={formatAge(animal.date_of_birth, animal.age_years)} />
-                {size && <Row label="Méret" value={size.label} />}
-                <Row label="Chip" value={animal.chip_id || "—"} mono={!!animal.chip_id} />
-              </div>
-              {animal.notes && (
-                <>
-                  <hr className="my-4 border-border" />
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">{animal.notes}</p>
-                </>
-              )}
-            </CardContent>
-          </Card>
+          <Separator />
 
           {/* Status change */}
-          <Card className="rounded-xl shadow-card">
-            <CardHeader className="pb-3"><CardTitle className="text-sm font-medium">Státusz megváltoztatása</CardTitle></CardHeader>
-            <CardContent className="flex flex-wrap gap-2">
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Státusz váltás</p>
+            <div className="flex flex-wrap gap-2">
               {otherStatuses.map(s => (
-                <Button key={s} variant="outline" size="sm" onClick={() => setConfirmStatus(s)} className="text-xs rounded-lg">
+                <Button key={s} variant="outline" size="sm" onClick={() => setConfirmStatus(s)} className="text-xs rounded-lg flex-1">
                   {STATUS_CONFIG[s].label}
                 </Button>
               ))}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          <IntakeSection animal={animal} onSaved={fetchAnimal} />
-          {animal.status === "adopted" && <AdopterSection animal={animal} onSaved={fetchAnimal} />}
+          <Separator />
 
-          {/* Facebook card */}
+          {/* Quick actions */}
+          <div className="space-y-2">
+            <Button onClick={handleGenerate} disabled={generating} size="sm" className="w-full gap-2 rounded-lg">
+              <Sparkles className="h-4 w-4" />
+              {generating ? "Generálás..." : hasAi ? "Újragenerálás" : "Bio generálása"}
+            </Button>
+            {animal.fb_post_url ? (
+              <a href={animal.fb_post_url} target="_blank" rel="noreferrer" className="block">
+                <Button variant="outline" size="sm" className="w-full rounded-lg">Facebook poszt →</Button>
+              </a>
+            ) : (
+              <Button variant="outline" size="sm" disabled={!animal.ai_text_short} className="w-full rounded-lg">
+                Facebook posztolás
+              </Button>
+            )}
+          </div>
+        </aside>
+
+        {/* ========== RIGHT CONTENT ========== */}
+        <main className="flex-1 min-w-0 space-y-6">
+          {/* Section 1: Bemutatkozás */}
           <Card className="rounded-xl shadow-card">
-            <CardHeader className="pb-3"><CardTitle className="text-sm font-medium">Facebook</CardTitle></CardHeader>
-            <CardContent>
-              {animal.fb_post_id ? (
-                <div className="space-y-2">
-                  <p className="text-sm text-primary">✓ Posztolva: {animal.fb_posted_at ? new Date(animal.fb_posted_at).toLocaleDateString("hu-HU") : ""}</p>
-                  {animal.fb_post_url && (
-                    <a href={animal.fb_post_url} target="_blank" rel="noreferrer" className="text-sm text-status-adopted hover:underline">Poszt megtekintése →</a>
-                  )}
-                </div>
-              ) : (
-                <Button variant="outline" size="sm" disabled={!animal.ai_text_short} className="text-xs rounded-lg">
-                  Posztolás Facebookra
-                </Button>
-              )}
-              {!animal.ai_text_short && !animal.fb_post_id && (
-                <p className="text-xs text-muted-foreground mt-2">Előbb generálj AI szöveget</p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Bemutatkozás</h3>
+                {hasAi && (
+                  <Button variant="ghost" size="sm" onClick={() => handleCopy(animal.ai_text_short ?? "")} className="gap-1 text-xs h-7">
+                    <Copy className="h-3 w-3" /> Másolás
+                  </Button>
+                )}
+              </div>
 
-        {/* RIGHT COLUMN */}
-        <div className="lg:col-span-2 space-y-4">
-          {/* AI texts */}
-          <Card className="rounded-xl shadow-card">
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <CardTitle className="text-base font-semibold">AI Generált Szövegek</CardTitle>
-            </CardHeader>
-            <CardContent>
               {!hasAi ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Sparkles className="h-12 w-12 mx-auto mb-3 text-muted-foreground/20" />
-                  <p>Kattints a „Bio generálása" gombra</p>
+                <div className="border-2 border-dashed border-border rounded-xl p-8 text-center">
+                  <Sparkles className="h-10 w-10 mx-auto mb-3 text-muted-foreground/30" />
+                  <p className="text-sm text-muted-foreground mb-3">Generálj bemutatkozó szöveget az AI segítségével</p>
+                  <Button onClick={handleGenerate} disabled={generating} size="sm" className="gap-2 rounded-lg">
+                    <Sparkles className="h-4 w-4" />
+                    {generating ? "Generálás..." : "Bio generálása"}
+                  </Button>
                 </div>
               ) : (
-                <Tabs defaultValue="short">
-                  <TabsList>
-                    <TabsTrigger value="short">FB poszt</TabsTrigger>
-                    <TabsTrigger value="long">Hosszú leírás</TabsTrigger>
-                    <TabsTrigger value="fit">Kinek ajánlott</TabsTrigger>
-                  </TabsList>
-                  {(["short", "long", "fit"] as const).map(tab => {
-                    const field = `ai_text_${tab}` as "ai_text_short" | "ai_text_long" | "ai_text_fit";
-                    const text = animal[field] ?? "";
-                    return (
-                      <TabsContent key={tab} value={tab} className="mt-4">
-                        {editingField === field ? (
+                <div className="space-y-4">
+                  {/* Main about text */}
+                  {editingField === "ai_text_short" ? (
+                    <div className="space-y-2">
+                      <Textarea value={editText} onChange={e => setEditText(e.target.value)} rows={6} className="rounded-lg" />
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={() => handleSaveAiText("ai_text_short", editText)} className="rounded-lg">Mentés</Button>
+                        <Button size="sm" variant="outline" onClick={() => setEditingField(null)} className="rounded-lg">Mégse</Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p
+                      className="text-sm leading-relaxed cursor-pointer hover:bg-accent/30 rounded-lg p-3 -m-1 transition-colors whitespace-pre-wrap"
+                      onClick={() => { setEditingField("ai_text_short"); setEditText(animal.ai_text_short ?? ""); }}
+                    >
+                      {animal.ai_text_short}
+                    </p>
+                  )}
+
+                  {/* Collapsible long description */}
+                  {animal.ai_text_long && (
+                    <Collapsible>
+                      <CollapsibleTrigger className="flex items-center gap-1 text-xs font-medium text-primary hover:underline cursor-pointer">
+                        <ChevronDown className="h-3 w-3" /> Hosszú leírás
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="mt-2">
+                        {editingField === "ai_text_long" ? (
                           <div className="space-y-2">
                             <Textarea value={editText} onChange={e => setEditText(e.target.value)} rows={8} className="rounded-lg" />
                             <div className="flex gap-2">
-                              <Button size="sm" onClick={() => handleSaveAiText(field, editText)} className="rounded-lg">Mentés</Button>
+                              <Button size="sm" onClick={() => handleSaveAiText("ai_text_long", editText)} className="rounded-lg">Mentés</Button>
                               <Button size="sm" variant="outline" onClick={() => setEditingField(null)} className="rounded-lg">Mégse</Button>
                             </div>
                           </div>
                         ) : (
-                          <div>
-                            <p className="whitespace-pre-wrap text-sm leading-relaxed cursor-pointer hover:bg-accent/30 rounded-lg p-2 -m-2 transition-colors"
-                               onClick={() => { setEditingField(field); setEditText(text); }}>
-                              {text || "—"}
-                            </p>
-                            <div className="mt-3">
-                              <Button variant="outline" size="sm" onClick={() => handleCopy(text)} className="gap-2 text-xs rounded-lg">
-                                <Copy className="h-3 w-3" /> Másolás
-                              </Button>
+                          <p
+                            className="text-sm text-muted-foreground leading-relaxed cursor-pointer hover:bg-accent/30 rounded-lg p-3 transition-colors whitespace-pre-wrap"
+                            onClick={() => { setEditingField("ai_text_long"); setEditText(animal.ai_text_long ?? ""); }}
+                          >
+                            {animal.ai_text_long}
+                          </p>
+                        )}
+                      </CollapsibleContent>
+                    </Collapsible>
+                  )}
+
+                  {/* Collapsible fit text */}
+                  {animal.ai_text_fit && (
+                    <Collapsible>
+                      <CollapsibleTrigger className="flex items-center gap-1 text-xs font-medium text-primary hover:underline cursor-pointer">
+                        <ChevronDown className="h-3 w-3" /> Kinek ajánlott
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="mt-2">
+                        {editingField === "ai_text_fit" ? (
+                          <div className="space-y-2">
+                            <Textarea value={editText} onChange={e => setEditText(e.target.value)} rows={6} className="rounded-lg" />
+                            <div className="flex gap-2">
+                              <Button size="sm" onClick={() => handleSaveAiText("ai_text_fit", editText)} className="rounded-lg">Mentés</Button>
+                              <Button size="sm" variant="outline" onClick={() => setEditingField(null)} className="rounded-lg">Mégse</Button>
                             </div>
                           </div>
+                        ) : (
+                          <p
+                            className="text-sm text-muted-foreground leading-relaxed cursor-pointer hover:bg-accent/30 rounded-lg p-3 transition-colors whitespace-pre-wrap"
+                            onClick={() => { setEditingField("ai_text_fit"); setEditText(animal.ai_text_fit ?? ""); }}
+                          >
+                            {animal.ai_text_fit}
+                          </p>
                         )}
-                      </TabsContent>
-                    );
-                  })}
-                </Tabs>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  )}
+                </div>
               )}
-            </CardContent>
+            </div>
           </Card>
 
-          {/* Photos */}
+          {/* Section 2: Oltások (moved UP) */}
+          {shelterId && <VaccinationsSection animalId={animal.id} shelterId={shelterId} />}
+
+          {/* Section 3: Egészségügyi napló */}
+          {shelterId && <HealthLogSection animalId={animal.id} shelterId={shelterId} />}
+
+          {/* Section 4: Befogadási adatok (collapsible) */}
+          <Collapsible defaultOpen>
+            <Card className="rounded-xl shadow-card">
+              <CollapsibleTrigger className="w-full">
+                <div className="flex items-center justify-between p-6 pb-0 cursor-pointer">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Befogadási adatok</h3>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="p-6 pt-4">
+                  <IntakeSection animal={animal} onSaved={fetchAnimal} />
+                </div>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+
+          {/* Section 5: Dokumentumok */}
+          {shelterId && <DocumentsSection animalId={animal.id} shelterId={shelterId} />}
+
+          {/* Section 6: Fotók */}
           <Card className="rounded-xl shadow-card">
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <CardTitle className="text-base font-semibold">Fotók</CardTitle>
-              <label>
-                <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
-                <Button variant="outline" size="sm" className="gap-2 rounded-lg cursor-pointer" asChild disabled={uploading}>
-                  <span><Plus className="h-4 w-4" /> {uploading ? "Feltöltés..." : "Fotó"}</span>
-                </Button>
-              </label>
-            </CardHeader>
-            <CardContent>
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Fotók</h3>
+                <label>
+                  <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+                  <Button variant="outline" size="sm" className="gap-2 rounded-lg cursor-pointer text-xs" asChild disabled={uploading}>
+                    <span><Plus className="h-3 w-3" /> Fotó</span>
+                  </Button>
+                </label>
+              </div>
+
               {photos.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p className="text-sm">Nincs fotó — Tölts fel egyet!</p>
+                <div className="border-2 border-dashed border-border rounded-xl p-8 text-center">
+                  <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground/30" />
+                  <p className="text-sm text-muted-foreground">Nincs fotó — Tölts fel egyet!</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {photos.map(photo => (
                     <div key={photo.id} className="relative group rounded-lg overflow-hidden aspect-square bg-accent cursor-pointer" onClick={() => setLightboxUrl(photo.url)}>
                       <img src={photo.url ?? ''} alt="" className="h-full w-full object-cover" />
@@ -384,20 +440,25 @@ export default function AnimalProfile() {
                   ))}
                 </div>
               )}
-            </CardContent>
+            </div>
           </Card>
 
-          {/* Audit log */}
+          {/* Section 7: Örökbefogadói adatok */}
+          {animal.status === "adopted" && <AdopterSection animal={animal} onSaved={fetchAnimal} />}
+
+          {/* Section 8: Előzmények */}
           <Collapsible>
             <Card className="rounded-xl shadow-card">
               <CollapsibleTrigger className="w-full">
-                <CardHeader className="flex flex-row items-center justify-between pb-3 cursor-pointer">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2"><ClipboardList className="h-4 w-4" /> Előzmények</CardTitle>
+                <div className="flex items-center justify-between p-6 pb-3 cursor-pointer">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                    <ClipboardList className="h-4 w-4" /> Előzmények
+                  </h3>
                   <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
+                </div>
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <CardContent className="pt-0">
+                <div className="px-6 pb-6">
                   {statusLogs.length === 0 ? (
                     <p className="text-sm text-muted-foreground">Nincs előzmény</p>
                   ) : (
@@ -410,30 +471,12 @@ export default function AnimalProfile() {
                       ))}
                     </div>
                   )}
-                </CardContent>
+                </div>
               </CollapsibleContent>
             </Card>
           </Collapsible>
-        </div>
+        </main>
       </div>
-
-      {/* Full-width tabbed sections */}
-      <Tabs defaultValue="vaccinations" className="w-full">
-        <TabsList className="w-full justify-start">
-          <TabsTrigger value="vaccinations">Oltások</TabsTrigger>
-          <TabsTrigger value="health">Egészségügyi napló</TabsTrigger>
-          <TabsTrigger value="documents">Dokumentumok</TabsTrigger>
-        </TabsList>
-        <TabsContent value="vaccinations" className="mt-4">
-          {shelterId && <VaccinationsSection animalId={animal.id} shelterId={shelterId} />}
-        </TabsContent>
-        <TabsContent value="health" className="mt-4">
-          {shelterId && <HealthLogSection animalId={animal.id} shelterId={shelterId} />}
-        </TabsContent>
-        <TabsContent value="documents" className="mt-4">
-          {shelterId && <DocumentsSection animalId={animal.id} shelterId={shelterId} />}
-        </TabsContent>
-      </Tabs>
 
       {/* Lightbox */}
       <Dialog open={!!lightboxUrl} onOpenChange={() => setLightboxUrl(null)}>
@@ -454,15 +497,6 @@ export default function AnimalProfile() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
-
-function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
-  return (
-    <div className="flex justify-between py-1">
-      <span className="text-muted-foreground">{label}</span>
-      <span className={`font-medium ${mono ? 'font-mono text-xs' : ''}`}>{value}</span>
     </div>
   );
 }
